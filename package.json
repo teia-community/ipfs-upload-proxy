@@ -1,0 +1,24 @@
+{
+  "name": "ipfs-upload-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "node ./src/index.mjs",
+    "format": "prettier --write \"./src/**/*.{js,mjs}\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Simon Kusterer",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "ipfs-car": "^0.7.0",
+    "multer": "^1.4.5-lts.1",
+    "nft.storage": "^6.4.1"
+  },
+  "devDependencies": {
+    "prettier": "^2.7.1"
+  }
+}
