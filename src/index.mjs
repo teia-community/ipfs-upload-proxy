@@ -17,23 +17,31 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 app.post("/single", upload.single("asset"), async function (req, res) {
-  const cid = await client.storeBlob(new Blob([req.file.buffer]));
-  res.json({ cid });
+  if(req.file) {
+    const cid = await client.storeBlob(new Blob([req.file.buffer]));
+    res.json({ cid });
+  } else {
+    res.status(400).send('Invalid request');
+  }
 });
 
 app.post("/multiple", upload.array("assets", 100), async function (req, res) {
-  const { car } = await packToBlob({
-    input: req.files.map((file) => ({
-      path: file.originalname,
-      content: file.buffer,
-    })),
-    blockstore: new MemoryBlockStore(),
-    wrapWithDirectory: true,
-  });
-
-  const cid = await client.storeCar(car);
-
-  res.json({ cid });
+  if(req.files) {
+    const { car } = await packToBlob({
+      input: req.files.map((file) => ({
+        path: file.originalname,
+        content: file.buffer,
+      })),
+      blockstore: new MemoryBlockStore(),
+      wrapWithDirectory: true,
+    });
+  
+    const cid = await client.storeCar(car);
+  
+    res.json({ cid });
+  } else {
+    res.status(400).send('Invalid request');
+  }
 });
 
 app.listen(port);
