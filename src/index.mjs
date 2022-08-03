@@ -34,7 +34,7 @@ app.post("/single", upload.single("asset"), async function (req, res) {
 });
 
 app.post("/multiple", upload.array("assets", 100), async function (req, res) {
-  if (req.files == null) {
+  if (req.files == null || req.files.length == 0) {
     res.status(400).send('Invalid request');
     return;
   }
