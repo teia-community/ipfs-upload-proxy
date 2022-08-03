@@ -27,7 +27,7 @@ app.post("/single", upload.single("asset"), async function (req, res) {
       rawLeaves: false,
       wrapWithDirectory: false,
   })
-  await nftStorage.storeCar(car)
+  await client.storeCar(car)
   const cid = root.toV0()
 
   res.json({ cid });
