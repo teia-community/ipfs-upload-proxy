@@ -28,7 +28,7 @@ app.post("/single", upload.single("asset"), async function (req, res) {
       wrapWithDirectory: false,
   })
   await client.storeCar(car)
-  const cid = root.toV0()
+  const cid = root.toV0().toString()
 
   res.json({ cid });
 });
@@ -48,7 +48,7 @@ app.post("/multiple", upload.array("assets", 100), async function (req, res) {
   });
 
   await client.storeCar(car);
-  const cid = root.toV0();
+  const cid = root.toV0().toString();
   res.json({ cid });
 
 });
