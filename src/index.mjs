@@ -33,7 +33,7 @@ app.post("/single", upload.single("asset"), async function (req, res) {
 
     res.json({ cid });
   } catch (err) {
-    console.log("unexpected error calling /single endpoint", err);
+    console.error("unexpected error calling /single endpoint", err);
     res.status(500).send("unexpected error");
   }
 });
@@ -44,20 +44,13 @@ app.post("/multiple", upload.array("assets", 100), async function (req, res) {
       res.status(400).send("Invalid request");
       return;
     }
-    const { root, car } = await packToBlob({
-      input: req.files.map((file) => ({
-        path: file.originalname,
-        content: file.buffer,
-      })),
-      blockstore: new MemoryBlockStore(),
-      wrapWithDirectory: true,
-    });
+    const cid = await client.storeDirectory(req.files.map((file) => (
+      new Blob(file.buffer)
+      )));
 
-    await client.storeCar(car);
-    const cid = root.toV0().toString();
-    res.json({ cid });
+    res.json({ cid:cid.toString() });
   } catch (err) {
-    console.log("unexpected error calling /multiple endpoint", err);
+    console.error("unexpected error calling /multiple endpoint", err);
     res.status(500).send("unexpected error");
   }
 });
