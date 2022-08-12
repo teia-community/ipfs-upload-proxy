@@ -17,40 +17,49 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 app.post("/single", upload.single("asset"), async function (req, res) {
-  if (req.file == null) {
-    res.status(400).send('Invalid request');
-    return;
-  }
+  try {
+    if (req.file == null) {
+      res.status(400).send("Invalid request");
+      return;
+    }
 
-  const { root, car } = await packToBlob({
+    const { root, car } = await packToBlob({
       input: new Blob([req.file.buffer]),
       rawLeaves: false,
       wrapWithDirectory: false,
-  })
-  await client.storeCar(car)
-  const cid = root.toV0().toString()
+    });
+    await client.storeCar(car);
+    const cid = root.toV0().toString();
 
-  res.json({ cid });
+    res.json({ cid });
+  } catch (err) {
+    console.log("unexpected error calling /single endpoint", err);
+    res.status(500).send("unexpected error");
+  }
 });
 
 app.post("/multiple", upload.array("assets", 100), async function (req, res) {
-  if (req.files == null || req.files.length == 0) {
-    res.status(400).send('Invalid request');
-    return;
+  try {
+    if (req.files == null || req.files.length == 0) {
+      res.status(400).send("Invalid request");
+      return;
+    }
+    const { root, car } = await packToBlob({
+      input: req.files.map((file) => ({
+        path: file.originalname,
+        content: file.buffer,
+      })),
+      blockstore: new MemoryBlockStore(),
+      wrapWithDirectory: true,
+    });
+
+    await client.storeCar(car);
+    const cid = root.toV0().toString();
+    res.json({ cid });
+  } catch (err) {
+    console.log("unexpected error calling /multiple endpoint", err);
+    res.status(500).send("unexpected error");
   }
-  const { root, car } = await packToBlob({
-    input: req.files.map((file) => ({
-      path: file.originalname,
-      content: file.buffer,
-    })),
-    blockstore: new MemoryBlockStore(),
-    wrapWithDirectory: true,
-  });
-
-  await client.storeCar(car);
-  const cid = root.toV0().toString();
-  res.json({ cid });
-
 });
 
 app.listen(port);
