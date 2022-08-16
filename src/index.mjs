@@ -14,7 +14,7 @@ const app = express();
 app.use(cors());
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ storage, preservePath: true });
 
 app.post("/single", upload.single("asset"), async function (req, res) {
   try {
