@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { NFTStorage } from "nft.storage";
+import { File, NFTStorage } from "nft.storage";
 import { packToBlob } from "ipfs-car/pack/blob";
 import { MemoryBlockStore } from "ipfs-car/blockstore/memory";
 import express from "express";
@@ -45,7 +45,7 @@ app.post("/multiple", upload.array("assets", 100), async function (req, res) {
       return;
     }
     const cid = await client.storeDirectory(req.files.map((file) => (
-      new Blob(file.buffer)
+      new File([file.buffer], file.originalname)
       )));
 
     res.json({ cid:cid.toString() });
