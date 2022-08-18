@@ -25,7 +25,7 @@ const upload = multer({
 app.post("/single", upload.single("asset"), async function (req, res) {
   try {
     if (req.file == null) {
-      res.status(400).send("Invalid request");
+      res.status(400).send("Invalid request: 'file' is empty.");
       return;
     }
 
@@ -39,15 +39,15 @@ app.post("/single", upload.single("asset"), async function (req, res) {
 
     res.json({ cid });
   } catch (err) {
-    console.log("unexpected error calling /single endpoint", err);
-    res.status(500).send("unexpected error");
+    console.error("unexpected error calling /single endpoint", err);
+    res.status(500).send(`unexpected error: ${err}`);
   }
 });
 
 app.post("/multiple", upload.array("assets", 100), async function (req, res) {
   try {
     if (req.files == null || req.files.length == 0) {
-      res.status(400).send("Invalid request");
+      res.status(400).send("Invalid request: 'files' is empty.");
       return;
     }
     const cid = await client.storeDirectory(
@@ -56,8 +56,8 @@ app.post("/multiple", upload.array("assets", 100), async function (req, res) {
 
     res.json({ cid: cid.toString() });
   } catch (err) {
-    console.log("unexpected error calling /multiple endpoint", err);
-    res.status(500).send("unexpected error");
+    console.error("unexpected error calling /multiple endpoint", err);
+    res.status(500).send(`unexpected error: ${err}`);
   }
 });
 
