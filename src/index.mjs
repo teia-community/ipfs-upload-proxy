@@ -39,7 +39,7 @@ app.post("/single", upload.single("asset"), async function (req, res) {
 
     res.json({ cid });
   } catch (err) {
-    console.error("unexpected error calling /single endpoint", err);
+    console.log("unexpected error calling /single endpoint", err);
     res.status(500).send("unexpected error");
   }
 });
@@ -56,7 +56,7 @@ app.post("/multiple", upload.array("assets", 100), async function (req, res) {
 
     res.json({ cid: cid.toString() });
   } catch (err) {
-    console.error("unexpected error calling /multiple endpoint", err);
+    console.log("unexpected error calling /multiple endpoint", err);
     res.status(500).send("unexpected error");
   }
 });
