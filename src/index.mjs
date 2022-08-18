@@ -22,11 +22,15 @@ const upload = multer({
   },
 });
 
+const handle_error = (res, req, error, status = 500) => {
+  console.error(`ERROR from ${req.hostname}@${req.ip} -> ${error}`);
+  res.status(status).send(error);
+}
+
 app.post("/single", upload.single("asset"), async function (req, res) {
   try {
     if (req.file == null) {
-      res.status(400).send("Invalid request: 'file' is empty.");
-      return;
+      return handle_error(res, req, "Invalid request: 'file' is missing.", 400);
     }
 
     const { root, car } = await packToBlob({
@@ -39,16 +43,14 @@ app.post("/single", upload.single("asset"), async function (req, res) {
 
     res.json({ cid });
   } catch (err) {
-    console.error("unexpected error calling /single endpoint", err);
-    res.status(500).send(`unexpected error: ${err}`);
+    handle_error(res, req, `unexpected error calling /single endpoint: ${err}`);
   }
 });
 
 app.post("/multiple", upload.array("assets", 100), async function (req, res) {
   try {
     if (req.files == null || req.files.length == 0) {
-      res.status(400).send("Invalid request: 'files' is empty.");
-      return;
+      return handle_error(res, req, "Invalid request: 'files' is missing or empty.", 400);
     }
     const cid = await client.storeDirectory(
       req.files.map((file) => new File([file.buffer], file.originalname))
@@ -56,8 +58,7 @@ app.post("/multiple", upload.array("assets", 100), async function (req, res) {
 
     res.json({ cid: cid.toString() });
   } catch (err) {
-    console.error("unexpected error calling /multiple endpoint", err);
-    res.status(500).send(`unexpected error: ${err}`);
+    handle_error(`unexpected error calling /multiple endpoint: ${err}`);
   }
 });
 
