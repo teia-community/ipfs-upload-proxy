@@ -1,11 +1,11 @@
 import "dotenv/config";
 import { File, NFTStorage } from "nft.storage";
 import { packToBlob } from "ipfs-car/pack/blob";
-import { MemoryBlockStore } from "ipfs-car/blockstore/memory";
 import express from "express";
 import { Blob } from "buffer";
 import multer from "multer";
 import cors from "cors";
+import { nanoid } from "nanoid";
 
 const client = new NFTStorage({ token: process.env.API_TOKEN });
 const port = process.env.PORT || 4444;
@@ -18,15 +18,20 @@ const upload = multer({
   storage,
   preservePath: true,
   limits: {
-    fileSize: 100000000, // 100MB
+    fileSize: process.env.FILE_SIZE_LIMIT || 100000000, // 100MB
   },
 });
+
+const handle_error = (res, req, error, status = 500) => {
+  const id = nanoid();
+  console.error(`ERROR from ${req.hostname}@${req.ip} | ${id} -> ${error}`);
+  res.status(status).send(`${id} | ${error}`);
+};
 
 app.post("/single", upload.single("asset"), async function (req, res) {
   try {
     if (req.file == null) {
-      res.status(400).send("Invalid request");
-      return;
+      return handle_error(res, req, "Invalid request: 'file' is missing.", 400);
     }
 
     const { root, car } = await packToBlob({
@@ -39,25 +44,20 @@ app.post("/single", upload.single("asset"), async function (req, res) {
 
     res.json({ cid });
   } catch (err) {
-    console.error("unexpected error calling /single endpoint", err);
-    res.status(500).send("unexpected error");
+    handle_error(res, req, `unexpected error calling /single endpoint: ${err}`);
   }
 });
 
 app.post("/multiple", upload.array("assets", 100), async function (req, res) {
   try {
     if (req.files == null || req.files.length == 0) {
-      res.status(400).send("Invalid request");
-      return;
+      return handle_error(res, req, "Invalid request: 'files' is missing or empty.", 400);
     }
-    const cid = await client.storeDirectory(
-      req.files.map((file) => new File([file.buffer], file.originalname))
-    );
+    const cid = await client.storeDirectory(req.files.map((file) => new File([file.buffer], file.originalname)));
 
     res.json({ cid: cid.toString() });
   } catch (err) {
-    console.error("unexpected error calling /multiple endpoint", err);
-    res.status(500).send("unexpected error");
+    handle_error(req, res, `unexpected error calling /multiple endpoint: ${err}`);
   }
 });
 
