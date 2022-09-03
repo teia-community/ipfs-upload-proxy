@@ -14,7 +14,13 @@ const app = express();
 app.use(cors());
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage, preservePath: true });
+const upload = multer({
+  storage,
+  preservePath: true,
+  limits: {
+    fileSize: 100000000, // 100MB
+  },
+});
 
 app.post("/single", upload.single("asset"), async function (req, res) {
   try {
@@ -44,11 +50,11 @@ app.post("/multiple", upload.array("assets", 100), async function (req, res) {
       res.status(400).send("Invalid request");
       return;
     }
-    const cid = await client.storeDirectory(req.files.map((file) => (
-      new File([file.buffer], file.originalname)
-      )));
+    const cid = await client.storeDirectory(
+      req.files.map((file) => new File([file.buffer], file.originalname))
+    );
 
-    res.json({ cid:cid.toString() });
+    res.json({ cid: cid.toString() });
   } catch (err) {
     console.error("unexpected error calling /multiple endpoint", err);
     res.status(500).send("unexpected error");
