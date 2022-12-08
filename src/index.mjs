@@ -48,7 +48,7 @@ app.post("/single", upload.single("asset"), async function (req, res) {
   }
 });
 
-app.post("/multiple", upload.array("assets", 100), async function (req, res) {
+app.post("/multiple", upload.array("assets", 2000), async function (req, res) {
   try {
     if (req.files == null || req.files.length == 0) {
       return handle_error(res, req, "Invalid request: 'files' is missing or empty.", 400);
