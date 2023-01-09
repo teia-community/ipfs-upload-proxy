@@ -57,7 +57,7 @@ app.post("/multiple", upload.array("assets", 2000), async function (req, res) {
 
     res.json({ cid: cid.toString() });
   } catch (err) {
-    handle_error(req, res, `unexpected error calling /multiple endpoint: ${err}`);
+    handle_error(res, req, `unexpected error calling /multiple endpoint: ${err}`);
   }
 });
 
