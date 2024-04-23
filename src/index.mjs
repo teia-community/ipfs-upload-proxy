@@ -4,7 +4,7 @@ import express from "express";
 import multer from "multer";
 import cors from "cors";
 import { nanoid } from "nanoid";
-import { unlink, mkdirSync, existsSync, createReadStream } from 'node:fs';
+import { mkdirSync, existsSync, createReadStream, rmSync } from 'node:fs';
 import path from "path"
 import { create, globSource } from 'kubo-rpc-client'
 import { randomUUID } from 'node:crypto';
@@ -73,12 +73,11 @@ app.post("/single", preuploadMiddleware, upload.single("asset"), async function 
       await NFTStorageClient.storeCar(await CarReader.fromIterable(carBlob))
     }
 
-    unlink(req.file.path, (err) => {
-      if (err) throw err;
-    })
     res.json({ cid: cid.toString() });
   } catch (err) {
     handle_error(res, req, `unexpected error calling /single endpoint: ${err}`);
+  } finally {
+    rmSync("./data/" + req.dest, {recursive: true, force: true})
   }
 });
 
@@ -102,6 +101,8 @@ app.post("/multiple", preuploadMiddleware, upload.array("assets", 2000), async f
     res.json({ cid: cid.toString() });
   } catch (err) {
     handle_error(res, req, `unexpected error calling /multiple endpoint: ${err}`);
+  } finally {
+    rmSync("./data/" + req.dest, {recursive: true, force: true})
   }
 });
 
