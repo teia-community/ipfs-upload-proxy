@@ -1,0 +1,22 @@
+services:
+  ipfsproxy:
+    build: .
+    restart: unless-stopped
+    ports:
+      - 0.0.0.0:4444:4444
+    env_file:
+      - .env
+    volumes:
+      - data:/usr/src/app/data
+
+  ipfs:
+    image: ipfs/kubo:v0.28.0
+    env_file:
+      - .env
+    volumes:
+      - ipfs:/data/ipfs
+      - ./001-init.sh:/container-init.d/001-init.sh
+
+volumes:
+  data:
+  ipfs:
