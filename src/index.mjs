@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { File, NFTStorage } from "nft.storage";
+import { NFTStorage } from "nft.storage";
 import express from "express";
 import multer from "multer";
 import cors from "cors";
