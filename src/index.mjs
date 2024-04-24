@@ -68,16 +68,20 @@ app.post("/single", preuploadMiddleware, upload.single("asset"), async function 
 
     const { cid } = await kuboClient.add(createReadStream(req.file.path), { cidVersion: 0, rawLeaves: false, wrapWithDirectory: false })
     if (process.env.API_TOKEN && process.env.USE_NFTSTORAGE) {
-      console.log('uploading to nftstorage')
-      const carBlob = kuboClient.dag.export(cid)
-      await NFTStorageClient.storeCar(await CarReader.fromIterable(carBlob))
+      try {
+        console.log('uploading to nftstorage')
+        const carBlob = kuboClient.dag.export(cid)
+        await NFTStorageClient.storeCar(await CarReader.fromIterable(carBlob))
+      } catch (err) {
+        console.log('failed to upload to nftstorage')
+      }
     }
 
     res.json({ cid: cid.toString() });
   } catch (err) {
     handle_error(res, req, `unexpected error calling /single endpoint: ${err}`);
   } finally {
-    rmSync("./data/" + req.dest, {recursive: true, force: true})
+    rmSync("./data/" + req.dest, { recursive: true, force: true })
   }
 });
 
@@ -88,13 +92,16 @@ app.post("/multiple", preuploadMiddleware, upload.array("assets", 2000), async f
     }
 
     if (process.env.API_TOKEN && process.env.USE_NFTSTORAGE) {
-      console.log('uploading to nftstorage')
-      await NFTStorageClient.storeDirectory(req.files.map((file) => new File([file.buffer], file.originalname)));
+      try {
+        console.log('uploading to nftstorage')
+        await NFTStorageClient.storeDirectory(req.files.map((file) => new File([file.buffer], file.originalname)));
+      } catch (err) {
+        console.log('failed to upload to nftstorage')
+      }
     }
 
     let cid
-    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), {wrapWithDirectory: true})) {
-      console.log(file)
+    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { wrapWithDirectory: true })) {
       cid = file.cid
     }
 
@@ -102,7 +109,7 @@ app.post("/multiple", preuploadMiddleware, upload.array("assets", 2000), async f
   } catch (err) {
     handle_error(res, req, `unexpected error calling /multiple endpoint: ${err}`);
   } finally {
-    rmSync("./data/" + req.dest, {recursive: true, force: true})
+    rmSync("./data/" + req.dest, { recursive: true, force: true })
   }
 });
 

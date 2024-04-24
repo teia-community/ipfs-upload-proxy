@@ -11,6 +11,7 @@ services:
 
   ipfs:
     image: ipfs/kubo:v0.28.0
+    restart: unless-stopped
     env_file:
       - .env
     volumes:
