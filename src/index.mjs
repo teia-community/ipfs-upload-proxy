@@ -60,6 +60,19 @@ const preuploadMiddleware = (req, _, next) => {
   next();
 };
 
+const uploadToNFTStorage = async (cid) => {
+  if (process.env.API_TOKEN && process.env.USE_NFTSTORAGE) {
+    try {
+      console.log('uploading to nftstorage')
+      const carBlob = kuboClient.dag.export(cid)
+      const NFTStorageCID = await NFTStorageClient.storeCar(await CarReader.fromIterable(carBlob))
+      console.log(`kubo: ${cid} nftstorage: ${NFTStorageCID}`)
+    } catch (err) {
+      console.log(`failed to upload to nftstorage: ${err}`)
+    }
+  }
+}
+
 app.post("/single", preuploadMiddleware, upload.single("asset"), async function (req, res) {
   try {
     if (req.file == null) {
@@ -67,15 +80,7 @@ app.post("/single", preuploadMiddleware, upload.single("asset"), async function 
     }
 
     const { cid } = await kuboClient.add(createReadStream(req.file.path), { cidVersion: 0, rawLeaves: false, wrapWithDirectory: false })
-    if (process.env.API_TOKEN && process.env.USE_NFTSTORAGE) {
-      try {
-        console.log('uploading to nftstorage')
-        const carBlob = kuboClient.dag.export(cid)
-        await NFTStorageClient.storeCar(await CarReader.fromIterable(carBlob))
-      } catch (err) {
-        console.log('failed to upload to nftstorage')
-      }
-    }
+    await uploadToNFTStorage(cid)
 
     res.json({ cid: cid.toString() });
   } catch (err) {
@@ -91,19 +96,12 @@ app.post("/multiple", preuploadMiddleware, upload.array("assets", 2000), async f
       return handle_error(res, req, "Invalid request: 'files' is missing or empty.", 400);
     }
 
-    if (process.env.API_TOKEN && process.env.USE_NFTSTORAGE) {
-      try {
-        console.log('uploading to nftstorage')
-        await NFTStorageClient.storeDirectory(req.files.map((file) => new File([file.buffer], file.originalname)));
-      } catch (err) {
-        console.log('failed to upload to nftstorage')
-      }
-    }
-
     let cid
-    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { wrapWithDirectory: true })) {
+    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { cidVersion: 1, hidden: true, wrapWithDirectory: false })) {
       cid = file.cid
     }
+
+    await uploadToNFTStorage(cid)
 
     res.json({ cid: cid.toString() });
   } catch (err) {
