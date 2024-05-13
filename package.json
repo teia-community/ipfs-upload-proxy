@@ -11,18 +11,21 @@
   "author": "Simon Kusterer",
   "license": "MIT",
   "dependencies": {
+    "@ipld/car": "^5.3.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.1",
-    "express": "^4.18.1",
-    "ipfs-car": "^0.7.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "kubo-rpc-client": "^4.1.1",
     "multer": "^1.4.5-lts.1",
-    "nanoid": "^4.0.0",
-    "nft.storage": "^6.4.1"
+    "nanoid": "^5.0.7",
+    "nft.storage": "^7.1.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "prettier": "^2.7.1"
+    "prettier": "^3.2.5"
   },
   "engines": {
     "node": ">=16"
-  }
+  },
+  "type": "commonjs"
 }
