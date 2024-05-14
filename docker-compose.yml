@@ -2,12 +2,17 @@ services:
   ipfsproxy:
     build: .
     restart: unless-stopped
-    ports:
-      - 0.0.0.0:4444:4444
     env_file:
       - .env
     volumes:
       - data:/usr/src/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ipfsproxy.rule=Host(`ipfsproxy.teia.art`, `ipfsproxy.teia.rocks`)"
+      - "traefik.http.routers.ipfsproxy.tls=true"
+      - "traefik.http.routers.ipfsproxy.tls.certresolver=cloudflare"
+      - "traefik.http.routers.ipfsproxy.middlewares=hsts-headers@file,traefik-real-ip@file,cors@file,limit@file"
+      - "traefik.http.services.ipfsproxy.loadbalancer.server.port=4444"
 
   ipfs:
     image: ipfs/kubo:v0.28.0
