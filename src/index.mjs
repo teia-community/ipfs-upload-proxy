@@ -79,7 +79,7 @@ app.post("/single", preuploadMiddleware, upload.single("asset"), async function 
       return handle_error(res, req, "Invalid request: 'file' is missing.", 400);
     }
 
-    const { cid } = await kuboClient.add(createReadStream(req.file.path), { cidVersion: 0, rawLeaves: false, wrapWithDirectory: false })
+    const { cid } = await kuboClient.add(createReadStream(req.file.path), { cidVersion: 0, rawLeaves: false, wrapWithDirectory: false, pin: false })
     await uploadToNFTStorage(cid)
 
     res.json({ cid: cid.toString() });
@@ -97,7 +97,7 @@ app.post("/multiple", preuploadMiddleware, upload.array("assets", 2000), async f
     }
 
     let cid
-    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { cidVersion: 1, hidden: true, wrapWithDirectory: false })) {
+    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { cidVersion: 1, hidden: true, wrapWithDirectory: false, pin: false })) {
       cid = file.cid
     }
 
