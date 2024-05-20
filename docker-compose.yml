@@ -2,6 +2,9 @@ services:
   ipfsproxy:
     build: .
     restart: unless-stopped
+    networks:
+      - default
+      - web
     env_file:
       - .env
     volumes:
@@ -17,8 +20,12 @@ services:
   ipfs:
     image: ipfs/kubo:v0.28.0
     restart: unless-stopped
+    networks:
+      - default
+      - ipfs
     env_file:
       - .env
+    command: "daemon --migrate=true --agent-version-suffix=docker --enable-gc"
     volumes:
       - ipfs:/data/ipfs
       - ./001-init.sh:/container-init.d/001-init.sh
@@ -26,3 +33,10 @@ services:
 volumes:
   data:
   ipfs:
+
+networks:
+  web:
+    external: true
+  ipfs:
+    external: true
+
