@@ -97,7 +97,7 @@ app.post("/multiple", preuploadMiddleware, upload.array("assets", 2000), async f
     }
 
     let cid
-    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**"), { cidVersion: 1, hidden: true, wrapWithDirectory: false, pin: false })) {
+    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { cidVersion: 1, hidden: true, wrapWithDirectory: true, pin: false })) {
       cid = file.cid
     }
 
