@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { NFTStorage } from "nft.storage";
 import express from "express";
 import multer from "multer";
 import cors from "cors";
@@ -8,30 +7,40 @@ import { mkdirSync, existsSync, createReadStream, rmSync } from 'node:fs';
 import path from "path"
 import { create, globSource } from 'kubo-rpc-client'
 import { randomUUID } from 'node:crypto';
-import { CarReader } from '@ipld/car'
 
-const NFTStorageClient = new NFTStorage({ token: process.env.API_TOKEN });
+const pin = process.env.PIN || false;
 const port = process.env.PORT || 4444;
 const app = express();
 
 app.use(cors());
 
+// Reject any path segment that is empty, `.`, or `..` to prevent traversal.
+const sanitizeUploadPath = (p) =>
+  p.replace(/\\/g, '/')
+   .split('/')
+   .filter(part => part !== '' && part !== '.' && part !== '..')
+   .join('/');
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let path = './data/' + req.dest + '/';
     file.path = path;
-    if (!existsSync(path, { recursive: true })) {
-      mkdirSync(path);
+    if (!existsSync(path)) {
+      mkdirSync(path, { recursive: true });
     }
     cb(null, path);
   },
   filename: function (req, file, cb) {
-    const parsed = path.parse(file.originalname)
-    const dest = './data/' + req.dest + '/' + parsed.dir
+    const safeName = sanitizeUploadPath(file.originalname);
+    if (!safeName) {
+      return cb(new Error('Invalid filename'));
+    }
+    const parsed = path.parse(safeName);
+    const dest = './data/' + req.dest + '/' + parsed.dir;
     if (!existsSync(dest)) {
       mkdirSync(dest, { recursive: true });
     }
-    cb(null, file.originalname);
+    cb(null, safeName);
   }
 })
 
@@ -60,31 +69,17 @@ const preuploadMiddleware = (req, _, next) => {
   next();
 };
 
-const uploadToNFTStorage = async (cid) => {
-  if (process.env.API_TOKEN && process.env.USE_NFTSTORAGE) {
-    try {
-      console.log('uploading to nftstorage')
-      const carBlob = kuboClient.dag.export(cid)
-      const NFTStorageCID = await NFTStorageClient.storeCar(await CarReader.fromIterable(carBlob))
-      console.log(`kubo: ${cid} nftstorage: ${NFTStorageCID}`)
-    } catch (err) {
-      console.log(`failed to upload to nftstorage: ${err}`)
-    }
-  }
-}
-
 app.post("/single", preuploadMiddleware, upload.single("asset"), async function (req, res) {
   try {
     if (req.file == null) {
       return handle_error(res, req, "Invalid request: 'file' is missing.", 400);
     }
 
-    const { cid } = await kuboClient.add(createReadStream(req.file.path), { cidVersion: 0, rawLeaves: false, wrapWithDirectory: false, pin: false })
-    await uploadToNFTStorage(cid)
-
+    const { cid } = await kuboClient.add(createReadStream(req.file.path), { cidVersion: 0, rawLeaves: false, wrapWithDirectory: false, pin: pin })
+    await kuboClient.routing.provide(cid, {recursive: true})
     res.json({ cid: cid.toString() });
   } catch (err) {
-    handle_error(res, req, `unexpected error calling /single endpoint: ${err}`);
+    handle_error(res, req, `unexpected error calling /single endpoint: ${err}${err?.cause ? ` (caused by: ${err.cause})` : ''}`);
   } finally {
     rmSync("./data/" + req.dest, { recursive: true, force: true })
   }
@@ -97,15 +92,13 @@ app.post("/multiple", preuploadMiddleware, upload.array("assets", 2000), async f
     }
 
     let cid
-    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { cidVersion: 1, hidden: true, wrapWithDirectory: true, pin: false })) {
+    for await (const file of kuboClient.addAll(globSource("./data/" + req.dest + "/", "**/*"), { cidVersion: 1, hidden: true, wrapWithDirectory: true, pin: pin })) {
       cid = file.cid
     }
-
-    await uploadToNFTStorage(cid)
-
+    await kuboClient.routing.provide(cid, {recursive: true})
     res.json({ cid: cid.toString() });
   } catch (err) {
-    handle_error(res, req, `unexpected error calling /multiple endpoint: ${err}`);
+    handle_error(res, req, `unexpected error calling /multiple endpoint: ${err}${err?.cause ? ` (caused by: ${err.cause})` : ''}`);
   } finally {
     rmSync("./data/" + req.dest, { recursive: true, force: true })
   }
