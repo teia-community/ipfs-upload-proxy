@@ -2,44 +2,21 @@ services:
   ipfsproxy:
     build: .
     restart: unless-stopped
-    networks:
-      - default
-      - web
     env_file:
       - .env
     volumes:
       - data:/usr/src/app/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ipfsproxy.rule=Host(`ipfsproxy.teia.art`, `ipfsproxy.teia.rocks`)"
-      - "traefik.http.routers.ipfsproxy.tls=true"
-      - "traefik.http.routers.ipfsproxy.tls.certresolver=cloudflare"
-      - "traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=2000000000"
-        #- "traefik.http.routers.ipfsproxy.middlewares=hsts-headers@file,traefik-real-ip@file,cors@file"
-      - "traefik.http.routers.ipfsproxy.middlewares=hsts-headers@file,traefik-real-ip@file,cors@file,limit"
-      - "traefik.http.services.ipfsproxy.loadbalancer.server.port=4444"
 
   ipfs:
     image: ipfs/kubo:v0.29.0
     restart: unless-stopped
-    networks:
-      - default
-      - ipfs
     env_file:
       - .env
     command: "daemon --migrate=true --agent-version-suffix=docker --enable-gc"
     volumes:
       - ipfs:/data/ipfs
       - ./001-init.sh:/container-init.d/001-init.sh
-      - ./002-objkt.sh:/container-init.d/002-objkt.sh
 
 volumes:
   data:
   ipfs:
-
-networks:
-  web:
-    external: true
-  ipfs:
-    external: true
-
